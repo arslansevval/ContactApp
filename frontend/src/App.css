@@ -1,0 +1,70 @@
+/* Fullscreen ve gradient arka plan */
+.login-page {
+  min-height: 100vh !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 16px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+/* Card tasarımı */
+.login-card {
+  width: 100% !important;
+  max-width: 400px !important;
+  padding: 32px !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Başlık ve alt başlık */
+.login-title {
+  text-align: center !important;
+  font-weight: bold !important;
+  color: white !important;
+  margin-bottom: 8px !important;
+}
+
+.login-subtitle {
+  text-align: center !important;
+  color: #e0e0e0 !important;
+  margin-bottom: 24px !important;
+}
+
+/* Error mesajı */
+.login-error {
+  margin-bottom: 16px !important;
+}
+
+/* MUI input özelleştirme */
+.mui-input .MuiOutlinedInput-root {
+  color: white !important;
+}
+
+.input-label {
+  color: white !important;
+}
+
+.input-icon {
+  color: white !important;
+}
+
+/* Login butonu */
+.login-btn {
+  padding: 12px 0 !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+  font-weight: bold !important;
+  margin-top: 16px !important;
+}
+
+.login-btn:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+}

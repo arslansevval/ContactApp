@@ -30,6 +30,22 @@ namespace ContactApp.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Username = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false),
+                    Role = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "employees",
                 columns: table => new
                 {
@@ -91,6 +107,9 @@ namespace ContactApp.Migrations
         {
             migrationBuilder.DropTable(
                 name: "contact_infos");
+
+            migrationBuilder.DropTable(
+                name: "users");
 
             migrationBuilder.DropTable(
                 name: "employees");

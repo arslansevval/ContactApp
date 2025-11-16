@@ -115,6 +115,34 @@ namespace ContactApp.Migrations
                     b.ToTable("employees", (string)null);
                 });
 
+            modelBuilder.Entity("ContactApp.Core.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("users", (string)null);
+                });
+
             modelBuilder.Entity("ContactApp.Core.Entities.ContactInfo", b =>
                 {
                     b.HasOne("ContactApp.Core.Entities.Employee", "Employee")

@@ -16,17 +16,9 @@ namespace ContactApp.API.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequestDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
-            var token = _authService.Login(dto.Username, dto.Password);
-
-            var response = new LoginResponseDto
-            {
-                Username = dto.Username,
-                Role = "Admin",
-                Token = token,
-                Expiration = DateTime.UtcNow.AddHours(1)
-            };
+            var response = await _authService.Login(dto.Username, dto.Password);
 
             return Ok(response);
         }

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ContactApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251112144832_InitialCreate")]
+    [Migration("20251116223114_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -116,6 +116,34 @@ namespace ContactApp.Migrations
                     b.HasIndex("CompanyId");
 
                     b.ToTable("employees", (string)null);
+                });
+
+            modelBuilder.Entity("ContactApp.Core.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("users", (string)null);
                 });
 
             modelBuilder.Entity("ContactApp.Core.Entities.ContactInfo", b =>

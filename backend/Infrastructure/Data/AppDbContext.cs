@@ -10,6 +10,7 @@ namespace ContactApp.Infrastructure.Data
         public DbSet<Company> Companies { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<ContactInfo> ContactInfos { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -18,6 +19,8 @@ namespace ContactApp.Infrastructure.Data
             modelBuilder.Entity<Company>().ToTable("companies");
             modelBuilder.Entity<Employee>().ToTable("employees");
             modelBuilder.Entity<ContactInfo>().ToTable("contact_infos");
+            modelBuilder.Entity<User>().ToTable("users");
         }
+
     }
 }

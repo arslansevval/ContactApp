@@ -1,4 +1,4 @@
 import { useContext } from "react";
-import { AuthContext } from "./AuthContext"; // ✅ artık AuthContext export edildi
+import { AuthContext } from "./AuthContext";
 
 export const useAuth = () => useContext(AuthContext);

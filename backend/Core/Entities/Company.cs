@@ -8,6 +8,5 @@ public class Company
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     public ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }

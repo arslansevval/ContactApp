@@ -8,5 +8,6 @@ public interface IUnitOfWork : IDisposable
     IRepository<Company> Companies { get; }
     IRepository<ContactInfo> ContactInfos { get; }
     IUserRepository Users { get; }
+    IEmployeeContactInfoRepository EmployeeContactInfos { get; }
     Task<int> CompleteAsync();
 }

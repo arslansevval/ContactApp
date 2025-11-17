@@ -1,139 +1,158 @@
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Box, Paper, Typography, Button, IconButton } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { Edit, Delete, Save, Add } from "@mui/icons-material";
+import { Edit, Delete, Save, Add, Close } from "@mui/icons-material";
+import { getCompanies, createCompany, updateCompany, deleteCompany } from "../api/companyApi";
+import { useModal } from "../hooks/useModal";
+import { useCompanyForm } from "../hooks/useCompanyForm";
 
 const Companies = () => {
-  const [rows, setRows] = useState([
-    { id: 1, name: "Apple", address: "Cupertino, CA", phone: "123-456-7890", email: "contact@apple.com", sector: "Technology" },
-    { id: 2, name: "Google", address: "Mountain View, CA", phone: "234-567-8901", email: "contact@google.com", sector: "Technology" },
-  ]);
-
+  const [rows, setRows] = useState([]);
   const [editingRowId, setEditingRowId] = useState(null);
+  const [isNewRow, setIsNewRow] = useState(false);
 
-  const handleEdit = (id) => setEditingRowId(id);
+  const { isOpen, openModal, closeModal } = useModal();
+  const { form, setField, setForm, resetForm } = useCompanyForm();
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this company?")) {
-      setRows(rows.filter(r => r.id !== id));
+  const isMounted = useRef(false);
+
+  useEffect(() => {
+    if (isMounted.current) return;
+    isMounted.current = true;
+    loadCompanies();
+  }, []);
+
+  const loadCompanies = async () => {
+    try {
+      const res = await getCompanies();
+      setRows(res.data);
+    } catch (err) {
+      console.error("Failed to fetch companies:", err);
     }
   };
 
-  const handleSave = (id) => setEditingRowId(null);
-
+  // -------------------
+  // ADD NEW COMPANY
+  // -------------------
   const handleAddCompany = () => {
-    const newRow = {
-      id: Date.now(),
-      name: "",
-      address: "",
-      phone: "",
-      email: "",
-      sector: "",
-    };
+    const tempId = Date.now();
+    const newRow = { id: tempId, ...form };
     setRows(prev => [...prev, newRow]);
-    setEditingRowId(newRow.id);
+    setEditingRowId(tempId);
+    setIsNewRow(true);
+    openModal(); // Modal aç
   };
 
-  const handleRowChange = (id, field, value) => {
-    setRows(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  // -------------------
+  // SAVE
+  // -------------------
+  const handleSave = async () => {
+    const row = rows.find(r => r.id === editingRowId);
+    if (!row) return;
+
+    try {
+      if (isNewRow) {
+        await createCompany(row);
+      } else {
+        await updateCompany(row.id, row);
+      }
+      loadCompanies();
+    } catch (err) {
+      console.error("Failed to save company:", err);
+    }
+
+    setEditingRowId(null);
+    setIsNewRow(false);
+    resetForm();
+    closeModal();
   };
+
+  // -------------------
+  // DELETE
+  // -------------------
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this company?")) return;
+
+    try {
+      await deleteCompany(id);
+      loadCompanies();
+    } catch (err) {
+      console.error("Failed to delete company:", err);
+    }
+  };
+
+  // -------------------
+  // CANCEL
+  // -------------------
+  const handleCancel = () => {
+    if (isNewRow) {
+      setRows(prev => prev.filter(r => r.id !== editingRowId));
+    }
+    setEditingRowId(null);
+    setIsNewRow(false);
+    resetForm();
+    closeModal();
+  };
+
+  // -------------------
+  // INLINE EDIT
+  // -------------------
+  const handleRowChange = (id, field, value) => {
+    setRows(prev =>
+      prev.map(r => (r.id === id ? { ...r, [field]: value } : r))
+    );
+  };
+
+  const editableCell = (params, field) =>
+    editingRowId === params.row.id ? (
+      <input
+        className="grid-input"
+        value={params.row[field] || ""}
+        onChange={(e) => handleRowChange(params.row.id, field, e.target.value)}
+      />
+    ) : (
+      <span>{params.row[field]}</span>
+    );
 
   const columns = [
-    { 
-      field: "name", 
-      headerName: "Name", 
-      flex: 1,
-      renderCell: (params) => editingRowId === params.row.id ? (
-        <input 
-          className="grid-input"
-          value={params.row.name} 
-          onChange={(e) => handleRowChange(params.row.id, "name", e.target.value)} 
-        />
-      ) : <span>{params.row.name}</span>
-    },
-    { 
-      field: "address", 
-      headerName: "Address", 
-      flex: 1,
-      renderCell: (params) => editingRowId === params.row.id ? (
-        <input 
-          className="grid-input"
-          value={params.row.address} 
-          onChange={(e) => handleRowChange(params.row.id, "address", e.target.value)} 
-        />
-      ) : <span>{params.row.address}</span>
-    },
-    { 
-      field: "phone", 
-      headerName: "Phone", 
-      flex: 1,
-      renderCell: (params) => editingRowId === params.row.id ? (
-        <input 
-          className="grid-input"
-          value={params.row.phone} 
-          onChange={(e) => handleRowChange(params.row.id, "phone", e.target.value)} 
-        />
-      ) : <span>{params.row.phone}</span>
-    },
-    { 
-      field: "email", 
-      headerName: "Email", 
-      flex: 1,
-      renderCell: (params) => editingRowId === params.row.id ? (
-        <input 
-          className="grid-input"
-          value={params.row.email} 
-          onChange={(e) => handleRowChange(params.row.id, "email", e.target.value)} 
-        />
-      ) : <span>{params.row.email}</span>
-    },
-    { 
-      field: "sector", 
-      headerName: "Sector", 
-      flex: 1,
-      renderCell: (params) => editingRowId === params.row.id ? (
-        <input 
-          className="grid-input"
-          value={params.row.sector} 
-          onChange={(e) => handleRowChange(params.row.id, "sector", e.target.value)} 
-        />
-      ) : <span>{params.row.sector}</span>
-    },
+    { field: "name", headerName: "Name", flex: 1, renderCell: (p) => editableCell(p, "name") },
+    { field: "address", headerName: "Address", flex: 1, renderCell: (p) => editableCell(p, "address") },
+    { field: "phone", headerName: "Phone", flex: 1, renderCell: (p) => editableCell(p, "phone") },
+    { field: "email", headerName: "Email", flex: 1, renderCell: (p) => editableCell(p, "email") },
     {
       field: "actions",
       headerName: "Actions",
-      width: 180,
-      renderCell: (params) => editingRowId === params.row.id ? (
-        <IconButton className="save-btn" color="primary" onClick={() => handleSave(params.row.id)}>
-          <Save />
-        </IconButton>
-      ) : (
-        <>
-          <IconButton className="edit-btn" color="primary" onClick={() => handleEdit(params.row.id)}>
-            <Edit />
-          </IconButton>
-          <IconButton className="delete-btn" color="error" onClick={() => handleDelete(params.row.id)}>
-            <Delete />
-          </IconButton>
-        </>
-      )
-    }
+      width: 200,
+      renderCell: (params) =>
+        editingRowId === params.row.id ? (
+          <>
+            <IconButton color="primary" onClick={handleSave}><Save /></IconButton>
+            <IconButton color="error" onClick={handleCancel}><Close /></IconButton>
+          </>
+        ) : (
+          <>
+            <IconButton color="primary" onClick={() => { setEditingRowId(params.row.id); openModal(); }}><Edit /></IconButton>
+            <IconButton color="error" onClick={() => handleDelete(params.row.id)}><Delete /></IconButton>
+          </>
+        ),
+    },
   ];
 
   return (
     <Box className="page-container">
       <Paper className="table-card">
         <Box className="table-header">
-            <Typography variant="h5" className="table-title">Companies</Typography>
-            <Button className="new-btn" variant="contained" color="primary" startIcon={<Add />} onClick={handleAddCompany}>
-                Add Company
-            </Button>
+          <Typography variant="h5">Companies</Typography>
+          <Button variant="contained" color="primary" startIcon={<Add />} onClick={handleAddCompany}>
+            Add Company
+          </Button>
         </Box>
 
         <div className="data-grid-wrapper">
           <DataGrid
             rows={rows}
             columns={columns}
+            initialState={{ pagination: { paginationModel: { pageSize: 5, page: 0 } } }}
             pageSizeOptions={[5, 10]}
             pagination
             disableRowSelectionOnClick

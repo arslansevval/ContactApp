@@ -28,4 +28,5 @@ public class GenericRepository<T> : IRepository<T> where T : class
 
     public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate) =>
         await _dbSet.Where(predicate).ToListAsync();
+
 }

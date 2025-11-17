@@ -31,23 +31,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
+   <AuthContext.Provider
+     value={{ user, token, login, logout, loading, isAuthenticated: !!token }}
+   >
+     {children}
+   </AuthContext.Provider>
     // <AuthContext.Provider
-    //   value={{ user, token, login, logout, loading, isAuthenticated: !!token }}
+    //     value={{
+    //         user,
+    //         token,
+    //         login,
+    //         logout,
+    //         loading,
+    //         isAuthenticated: true // 🔥 Test için her zaman giriş yapılmış kabul et
+    //     }}
     // >
-    //   {children}
+    // {children}
     // </AuthContext.Provider>
-    <AuthContext.Provider
-    value={{
-        user,
-        token,
-        login,
-        logout,
-        loading,
-        isAuthenticated: true // 🔥 Test için her zaman giriş yapılmış kabul et
-    }}
-    >
-    {children}
-    </AuthContext.Provider>
 
   );
 };

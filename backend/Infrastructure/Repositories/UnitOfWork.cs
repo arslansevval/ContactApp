@@ -24,6 +24,7 @@ namespace ContactApp.Infrastructure.Repositories
         public IRepository<Company> Companies { get; private set; }
         public IRepository<ContactInfo> ContactInfos { get; private set; }
         public IUserRepository Users { get; private set; }
+        public IEmployeeContactInfoRepository EmployeeContactInfos { get; private set; }
 
         public async Task<int> CompleteAsync() => await _context.SaveChangesAsync();
 

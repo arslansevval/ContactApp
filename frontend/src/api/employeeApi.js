@@ -1,6 +1,6 @@
 import api from "./axiosInstance";
 
-export const getEmployees = () => api.get("/employees");
-export const createEmployee = (data) => api.post("/employees", data);
-export const updateEmployee = (id, data) => api.put(`/employees/${id}`, data);
-export const deleteEmployee = (id) => api.delete(`/employees/${id}`);
+export const getEmployeesWithContactInfo = () => api.get("/employee/GetAllWithContactInfos");
+export const createEmployee = (data) => api.post("/employee/create", data);
+export const updateEmployee = (id, data) => api.put(`/employee/update/${id}`, data);
+export const deleteEmployee = (id) => api.delete(`/employee/delete/${id}`);

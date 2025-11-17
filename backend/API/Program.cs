@@ -12,7 +12,7 @@ using System.Text;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using FluentValidation;
-using ContactApp.Infrastructure;
+using ContactApp.Application.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +44,7 @@ builder.Services.AddScoped<ContactInfoService>();
 builder.Services.AddScoped<CompanyService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IEmployeeContactInfoRepository, EmployeeWithContactInfoRepository>();
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] 
@@ -69,6 +70,10 @@ builder.Services.AddAuthorization();
 
 // Controllers
 builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never;
+});
 
 // Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();

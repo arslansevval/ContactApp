@@ -22,7 +22,7 @@ public class AuthService
         if (user == null)
             throw new UnauthorizedAccessException("Kullanıcı bulunamadı.");
 
-        var result = _hasher.VerifyHashedPassword(null, user.PasswordHash, password);
+        var result = _hasher.VerifyHashedPassword(user.Username, user.PasswordHash, password);
 
         if (result == PasswordVerificationResult.Failed)
             throw new UnauthorizedAccessException("Geçersiz şifre.");
@@ -31,6 +31,7 @@ public class AuthService
 
         return new LoginResponseDto
         {
+            UserId = user.Id,
             Username = user.Username,
             Role = user.Role,
             Token = token,

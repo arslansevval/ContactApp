@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5001/api",
+  baseURL: "https://localhost:5001/api",
 });
 
 // Request interceptor: Her isteğe token ekler

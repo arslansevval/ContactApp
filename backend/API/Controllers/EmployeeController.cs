@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using ContactApp.Application.Services;
 using ContactApp.Application.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using FluentValidation;
+using FluentValidation.Results;
 
 [ApiController]
 [Authorize]
@@ -9,10 +11,12 @@ using Microsoft.AspNetCore.Authorization;
 public class EmployeeController : ControllerBase
 {
     private readonly EmployeeService _employeeService;
+    private readonly IValidator<EmployeeCreateDto> _employeeValidator;
 
-    public EmployeeController(EmployeeService employeeService)
+    public EmployeeController(EmployeeService employeeService, IValidator<EmployeeCreateDto> employeeValidator)
     {
         _employeeService = employeeService;
+        _employeeValidator = employeeValidator;
     }
 
     [HttpGet("GetAll")]
@@ -41,6 +45,20 @@ public class EmployeeController : ControllerBase
     [HttpPost("Create")]
     public async Task<IActionResult> Create(EmployeeWithContactInfoDto dto)
     {
+        // DTO içinden EmployeeCreateDto alıyoruz, örnek olarak FirstName, LastName, CompanyId
+        var employeeDto = new EmployeeCreateDto
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            CompanyId = dto.CompanyId
+        };
+
+        ValidationResult validationResult = await _employeeValidator.ValidateAsync(employeeDto);
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
+        }
+
         var result = await _employeeService.CreateEmployeeWithContactInfosAsync(dto);
         return Ok(result);
     }
@@ -49,6 +67,19 @@ public class EmployeeController : ControllerBase
     public async Task<IActionResult> Update(int id, EmployeeWithContactInfoDto dto)
     {
         if (id != dto.Id) return BadRequest();
+
+        var employeeDto = new EmployeeCreateDto
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            CompanyId = dto.CompanyId
+        };
+
+        ValidationResult validationResult = await _employeeValidator.ValidateAsync(employeeDto);
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
+        }
 
         await _employeeService.UpdateEmployeeWithContactInfosAsync(dto);
         return NoContent();
@@ -59,7 +90,6 @@ public class EmployeeController : ControllerBase
     {
         try
         {
-            // Employee + tüm ContactInfos birlikte silinecek
             await _employeeService.DeleteWithContactInfosAsync(id);
             return NoContent();
         }

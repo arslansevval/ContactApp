@@ -1,4 +1,8 @@
-import { Box, Paper, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton, Checkbox, FormControlLabel, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import { 
+  Box, Paper, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, 
+  TextField, IconButton, Checkbox, FormControlLabel, Select, MenuItem, FormControl, InputLabel,
+  Snackbar, Alert 
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { Edit, Delete, Add, Remove } from "@mui/icons-material";
 import { useState, useEffect, useRef } from "react";
@@ -24,6 +28,7 @@ const Employees = () => {
   const isMounted = useRef(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [warningMsg, setWarningMsg] = useState(""); // 🔹 Warning mesaj state
 
   // Regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -118,8 +123,18 @@ const Employees = () => {
       setDraftEmployee(null);
       resetEmployee();
       closeModal();
+
     } catch (err) {
       console.error("Failed to save employee:", err);
+
+      // 🔹 Backend validation hatalarını yakala
+      if (err.response?.data && Array.isArray(err.response.data)) {
+        setWarningMsg(err.response.data.join("\n"));
+      } else if (err.response?.data?.message) {
+        setWarningMsg(err.response.data.message);
+      } else {
+        setWarningMsg("Failed to save employee");
+      }
     }
   };
 
@@ -307,6 +322,18 @@ const Employees = () => {
         onConfirm={handleConfirmDelete}
         message="Are you sure you want to delete this employee?"
       />
+
+      {/* 🔹 Warning Snackbar */}
+      <Snackbar
+        open={!!warningMsg}
+        autoHideDuration={5000}
+        onClose={() => setWarningMsg("")}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={() => setWarningMsg("")} severity="warning" sx={{ width: '100%' }}>
+          {warningMsg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

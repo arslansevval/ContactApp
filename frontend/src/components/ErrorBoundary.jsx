@@ -1,5 +1,5 @@
 import React from "react";
-
+// ErrorBoundary component to catch JavaScript errors in child components
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);

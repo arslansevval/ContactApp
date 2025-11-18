@@ -9,17 +9,13 @@ namespace ContactApp.Application.Validators
         {
             RuleFor(x => x.EmployeeId)
                 .GreaterThan(0)
-                .WithMessage("Çalışan (EmployeeId) değeri geçerli olmalıdır.");
+                .WithMessage("EmployeeId must be greater than zero.");
 
             RuleFor(x => x.Type)
-                .NotEmpty().WithMessage("İletişim türü boş olamaz.")
-                .MaximumLength(50).WithMessage("İletişim türü en fazla 50 karakter olabilir.")
-                .Must(BeAValidType).WithMessage("İletişim türü 'Email', 'Phone' veya 'Address' olmalıdır.");
+                .NotEmpty().WithMessage("Contact type cannot be empty.");
 
             RuleFor(x => x.Value)
-                .NotEmpty().WithMessage("İletişim bilgisi (Value) boş olamaz.")
-                .MaximumLength(255).WithMessage("İletişim bilgisi en fazla 255 karakter olabilir.")
-                .Must(BeValidValue).WithMessage("Girilen iletişim bilgisi formatı geçerli değil.");
+                .NotEmpty().WithMessage("Contact value cannot be empty.");
         }
 
         private bool BeAValidType(string type)

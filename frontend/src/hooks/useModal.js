@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+// Custom hook to manage modal open/close state
 export const useModal = () => {
   const [isOpen, setIsOpen] = useState(false);
 

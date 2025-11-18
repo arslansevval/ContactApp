@@ -1,5 +1,5 @@
 import api from "../api/axiosInstance";
-
+// Custom hook to handle user login via API
 export const useLoginApi = () => {
   const loginFunc = async (email, password) => {
     try {

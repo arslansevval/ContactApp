@@ -1,6 +1,6 @@
-// components/DeleteModal.jsx
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
 
+// Modal component to confirm deletion actions
 const DeleteModal = ({ open, onCancel, onConfirm, message }) => {
   return (
     <Dialog open={open} onClose={onCancel}>

@@ -114,8 +114,6 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 
-// -------------------- App -------------------- //
-
 var app = builder.Build();
 
 // CORS must come before Authentication & Authorization

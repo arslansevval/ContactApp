@@ -26,7 +26,6 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     const result = await login(data.email, data.password, loginFunc);
-    console.log("Login result:", result);
     if (result.success) {
       navigate("/home");
     }

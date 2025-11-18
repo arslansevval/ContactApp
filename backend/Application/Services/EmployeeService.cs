@@ -27,9 +27,8 @@ public class EmployeeService
         _employeeContactInfoRepository = employeeContactInfoRepository;
     }
 
-    /// <summary>
+
     /// Tüm çalışanları getirir (cache destekli)
-    /// </summary>
     public async Task<IEnumerable<EmployeeReadDto>> GetAllAsync()
     {
         const string cacheKey = "all_employees";
@@ -45,9 +44,8 @@ public class EmployeeService
         return dtos;
     }
 
-    /// <summary>
+
     /// Tek bir çalışanı ID'ye göre getirir (cache destekli)
-    /// </summary>
     public async Task<EmployeeReadDto?> GetByIdAsync(int id)
     {
         string cacheKey = $"employee_{id}";
@@ -64,9 +62,8 @@ public class EmployeeService
         return dto;
     }
 
-    /// <summary>
+
     /// Tüm çalışanları ContactInfos ile getirir
-    /// </summary>
     public async Task<List<EmployeeWithContactInfoDto>> GetEmployeesWithContactInfosAsync()
     {
         var employees = await _employeeContactInfoRepository.GetAllWithContactInfosAsync();
@@ -91,16 +88,15 @@ public class EmployeeService
         }).ToList();
     }
 
-    /// <summary>
+
     /// Employee + ContactInfos birlikte ekleme
-    /// </summary>
     public async Task<EmployeeWithContactInfoDto> CreateEmployeeWithContactInfosAsync(EmployeeWithContactInfoDto dto)
     {
         // 1) Employee ekle (ContactInfos map edilmeden)
         var employee = _mapper.Map<Employee>(dto);
         employee.CompanyId = dto.CompanyId;
         employee.CreatedAt = DateTime.UtcNow;
-        //employee.ContactInfos = new List<ContactInfo>(); // boş liste
+
         await _unitOfWork.Employees.AddAsync(employee);
         await _unitOfWork.CompleteAsync(); // Employee ID'si için commit
 
@@ -119,7 +115,6 @@ public class EmployeeService
         if (employee == null)
             throw new KeyNotFoundException("Employee not found");
 
-        // ---------------------------
         // 1) Employee güncelle
         employee.CompanyId = dto.CompanyId;
         employee.FirstName = dto.FirstName;
@@ -127,7 +122,6 @@ public class EmployeeService
         employee.Position = dto.Position;
         _unitOfWork.Employees.Update(employee);
 
-        // ---------------------------
         // 2) ContactInfos sıfırla ve yeniden ekle
         if (employee.ContactInfos != null)
         {
@@ -151,18 +145,13 @@ public class EmployeeService
             }
         }
 
-        // ---------------------------
+
         // 3) Commit + Cache temizle
         await _unitOfWork.CompleteAsync();
         InvalidateCache(employee.Id);
     }
 
-
-
-
-    /// <summary>
     /// Employee + ContactInfos birlikte silme
-    /// </summary>
     public async Task DeleteWithContactInfosAsync(int employeeId)
     {
         var employee = await _employeeContactInfoRepository.GetByIdWithContactInfosAsync(employeeId);
@@ -179,9 +168,7 @@ public class EmployeeService
         InvalidateCache(employeeId);
     }
 
-    /// <summary>
     /// Cache temizleme
-    /// </summary>
     private void InvalidateCache(int employeeId)
     {
         _cache.Remove("all_employees");

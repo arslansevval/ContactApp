@@ -44,7 +44,7 @@ namespace ContactApp.Infrastructure.Services
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(5), // Token süresi 5 dakika
+                expires: DateTime.UtcNow.AddMinutes(10), // Token süresi 10 dakika
                 signingCredentials: creds
             );
 

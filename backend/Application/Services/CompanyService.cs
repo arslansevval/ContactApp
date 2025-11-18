@@ -19,9 +19,7 @@ public class CompanyService
         _cache = cache;
     }
 
-    /// <summary>
     /// Tüm şirketleri getirir (cache destekli)
-    /// </summary>
     public async Task<IEnumerable<Company>> GetAllAsync()
     {
         const string cacheKey = "all_companies";
@@ -42,9 +40,8 @@ public class CompanyService
         return companies ?? Enumerable.Empty<Company>();
     }
 
-    /// <summary>
+
     /// ID’ye göre tek bir şirket getirir (cache destekli)
-    /// </summary>
     public async Task<Company?> GetByIdAsync(int id)
     {
         string cacheKey = $"company_{id}";
@@ -60,9 +57,7 @@ public class CompanyService
         return company;
     }
 
-    /// <summary>
-    /// Yeni şirket ekler ve cache’i temizler
-    /// </summary>
+    // Yeni şirket ekler ve cache’i temizler
     public async Task AddAsync(Company company)
     {
         await _unitOfWork.Companies.AddAsync(company);
@@ -71,9 +66,7 @@ public class CompanyService
         InvalidateCache(company.Id);
     }
 
-    /// <summary>
-    /// Şirketi günceller ve cache’i temizler
-    /// </summary>
+    // Şirketi günceller ve cache’i temizler
     public async Task UpdateAsync(Company company)
     {
         _unitOfWork.Companies.Update(company);
@@ -82,9 +75,7 @@ public class CompanyService
         InvalidateCache(company.Id);
     }
 
-    /// <summary>
     /// Şirketi siler ve cache’i temizler
-    /// </summary>
     public async Task DeleteAsync(int id)
     {
         var company = await _unitOfWork.Companies.GetByIdAsync(id);
@@ -97,9 +88,7 @@ public class CompanyService
         InvalidateCache(id);
     }
 
-    /// <summary>
     /// Cache invalidation işlemlerini merkezi olarak yönetir
-    /// </summary>
     private void InvalidateCache(int companyId)
     {
         _cache.Remove("all_companies");

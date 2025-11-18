@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import { Box, Paper, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from "@mui/material";
+import { Box, Paper, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { Edit, Delete, Save, Add, Close } from "@mui/icons-material";
+import { Edit, Delete, Add } from "@mui/icons-material";
 import { getCompanies, createCompany, updateCompany, deleteCompany } from "../api/companyApi";
 import { useModal } from "../hooks/useModal";
 import { useCompanyForm } from "../hooks/useCompanyForm";
@@ -15,9 +15,11 @@ const Companies = () => {
   const { isOpen, openModal, closeModal } = useModal();
   const { form, setField, setForm, resetForm, errors, isFormValid } = useCompanyForm();
 
-  const isMounted = useRef(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [warning, setWarning] = useState(""); // 🔹 backend hatalarını göstermek için
+
+  const isMounted = useRef(false);
 
   useEffect(() => {
     if (isMounted.current) return;
@@ -56,14 +58,25 @@ const Companies = () => {
 
     try {
       if (isNewRow) {
-        await createCompany(form);
+        const res = await createCompany(form);
+        // 🔹 Backend validation hatası
+        if (res.data?.errors) {
+          setWarning(res.data.errors[0]); // ilk hatayı göster
+          return;
+        }
       } else {
-        await updateCompany(editingRowId, form);
+        const res = await updateCompany(editingRowId, form);
+        if (res.data?.errors) {
+          setWarning(res.data.errors[0]);
+          return;
+        }
       }
+
       await loadCompanies();
       handleCancel(); // modal ve form reset
     } catch (err) {
       console.error("Failed to save company:", err);
+      setWarning("Failed to save company"); // genel hata
     }
   };
 
@@ -92,6 +105,7 @@ const Companies = () => {
       setRows(rows.filter(r => r.id !== deleteId));
     } catch (err) {
       console.error("Failed to delete company:", err);
+      setWarning("Failed to delete company");
     } finally {
       setDeleteId(null);
       setDeleteOpen(false);
@@ -147,18 +161,22 @@ const Companies = () => {
               value={form.name}
               onChange={(e) => setField("name", e.target.value)}
               fullWidth
+              error={!!errors.name}
+              helperText={errors.name || ""}
             />
             <TextField
               label="Address"
               value={form.address}
               onChange={(e) => setField("address", e.target.value)}
               fullWidth
+              error={!!errors.address}
+              helperText={errors.address || ""}
             />
             <TextField
               label="Phone"
               value={form.phone}
               onChange={(e) => setField("phone", e.target.value)}
-              error={errors.phone}
+              error={!!errors.phone}
               helperText={errors.phone ? "Invalid phone format" : ""}
               fullWidth
             />
@@ -166,7 +184,7 @@ const Companies = () => {
               label="Email"
               value={form.email}
               onChange={(e) => setField("email", e.target.value)}
-              error={errors.email}
+              error={!!errors.email}
               helperText={errors.email ? "Invalid email format" : ""}
               fullWidth
             />
@@ -185,6 +203,16 @@ const Companies = () => {
         onConfirm={handleConfirmDelete}
         message="Are you sure you want to delete this company?"
       />
+
+      {/* ------------------- WARNING SNACKBAR ------------------- */}
+      <Snackbar
+        open={!!warning}
+        autoHideDuration={5000}
+        onClose={() => setWarning("")}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity="warning" onClose={() => setWarning("")}>{warning}</Alert>
+      </Snackbar>
     </Box>
   );
 };

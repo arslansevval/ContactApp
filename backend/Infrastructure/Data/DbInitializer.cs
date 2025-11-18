@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using ContactApp.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace ContactApp.Infrastructure.Data
 {
@@ -7,152 +12,133 @@ namespace ContactApp.Infrastructure.Data
     {
         public static void Initialize(AppDbContext context)
         {
-            // Migration varsa uygular (tabloları oluşturur)
-            //context.Database.Migrate();
+            // 1) DB/Migration için retry mekanizması (Postgres geç ayağa kalkarsa API çakılmasın)
+            const int maxAttempts = 10;
+            var delay = TimeSpan.FromSeconds(3);
 
-            // -------------------- Companies -------------------- //
-            var companies = new List<Company>
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                new Company
+                try
                 {
-                    Id = 1,
+                    context.Database.Migrate(); // Tablolar yoksa oluştur, migration'ları uygula
+                    break; // Başarılı → döngüden çık
+                }
+                catch (NpgsqlException)
+                {
+                    if (attempt == maxAttempts)
+                        throw; // Son denemede de patlarsa exception fırlat (logda görürsün)
+
+                    Thread.Sleep(delay); // Biraz bekle, tekrar dene
+                }
+            }
+
+            // 2) Companies + Employees + ContactInfos seed (Id set ETMİYORUZ)
+            if (!context.Companies.Any() && !context.Employees.Any() && !context.ContactInfos.Any())
+            {
+                // Apple
+                var apple = new Company
+                {
                     Name = "Apple",
                     Address = "123 Main St",
                     Phone = "555-1234",
                     Email = "info@apple.com",
                     CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                },
-                new Company
+                };
+
+                var sevval = new Employee
                 {
-                    Id = 2,
+                    Company = apple, // FK yerine navigation kullanıyoruz
+                    FirstName = "Sevval",
+                    LastName = "Arslan",
+                    Position = "Developer",
+                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc),
+                    ContactInfos = new List<ContactInfo>
+                    {
+                        new ContactInfo
+                        {
+                            Type = "Email",
+                            Value = "sevval.arslan@gmail.com",
+                            IsPrimary = true,
+                            CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new ContactInfo
+                        {
+                            Type = "Phone",
+                            Value = "555-0001",
+                            IsPrimary = true,
+                            CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
+                        }
+                    }
+                };
+
+                // Beta LLC
+                var beta = new Company
+                {
                     Name = "Beta LLC",
                     Address = "456 Oak Ave",
                     Phone = "555-5678",
                     Email = "contact@beta.com",
                     CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                }
-            };
+                };
 
-            foreach (var company in companies)
-            {
-                if (!context.Companies.Any(c => c.Id == company.Id))
+                var zeynep = new Employee
                 {
-                    context.Companies.Add(company);
-                }
-            }
-            context.SaveChanges();
-
-            // -------------------- Employees -------------------- //
-            var employees = new List<Employee>
-            {
-                new Employee
-                {
-                    Id = 1,
-                    CompanyId = 1,
-                    FirstName = "Sevval",
-                    LastName = "Arslan",
-                    Position = "Developer",
-                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                },
-                new Employee
-                {
-                    Id = 2,
-                    CompanyId = 2,
+                    Company = beta,
                     FirstName = "Zeynep",
                     LastName = "Suvak",
                     Position = "Manager",
-                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                }
-            };
+                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc),
+                    ContactInfos = new List<ContactInfo>
+                    {
+                        new ContactInfo
+                        {
+                            Type = "Email",
+                            Value = "zeynep.suvak@ed.com",
+                            IsPrimary = true,
+                            CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new ContactInfo
+                        {
+                            Type = "Phone",
+                            Value = "555-0002",
+                            IsPrimary = true,
+                            CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
+                        }
+                    }
+                };
 
-            foreach (var employee in employees)
-            {
-                if (!context.Employees.Any(e => e.Id == employee.Id))
-                {
-                    context.Employees.Add(employee);
-                }
+                // Root entity'leri eklemek yeterli,
+                // EF navigation'lardan Companies / Employees / ContactInfos zincirini takip edip hepsini insert eder.
+                context.Companies.AddRange(apple, beta);
+                context.Employees.AddRange(sevval, zeynep);
+
+                context.SaveChanges();
             }
-            context.SaveChanges();
 
-            // -------------------- ContactInfos -------------------- //
-            var contactInfos = new List<ContactInfo>
+            // 3) Users seed
+            if (!context.Users.Any())
             {
-                new ContactInfo
+                var users = new List<User>
                 {
-                    Id = 1,
-                    EmployeeId = 1,
-                    Type = "Email",
-                    Value = "sevval.arslan@gmail.com",
-                    IsPrimary = true,
-                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                },
-                new ContactInfo
-                {
-                    Id = 2,
-                    EmployeeId = 1,
-                    Type = "Phone",
-                    Value = "555-0001",
-                    IsPrimary = true,
-                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                },
-                new ContactInfo
-                {
-                    Id = 3,
-                    EmployeeId = 2,
-                    Type = "Email",
-                    Value = "zeynep.suvak@ed.com",
-                    IsPrimary = true,
-                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                },
-                new ContactInfo
-                {
-                    Id = 4,
-                    EmployeeId = 2,
-                    Type = "Phone",
-                    Value = "555-0002",
-                    IsPrimary = true,
-                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                }
-            };
+                    new User
+                    {
+                        Username = "admin",
+                        PasswordHash = "AQAAAAIAAYagAAAAEFqtbOPE2idxUpyojdztJmdIuFZRmhofTP5g8NIu/q+hqF8FXWYZ+3s9iagNW9jKKg==", // admin123
+                        Role = "Admin",
+                        CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
+                    },
+                    new User
+                    {
+                        Username = "user",
+                        PasswordHash = "AQAAAAIAAYagAAAAEN2hsSrePGAnhJwh204VG2GpErdFNpQJDVCivC4h2qy7uJcB1Uu8ardHMMPk5WlHQg==", // user123
+                        Role = "User",
+                        CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
+                    }
+                };
 
-            foreach (var ci in contactInfos)
-            {
-                if (!context.ContactInfos.Any(c => c.Id == ci.Id))
-                {
-                    context.ContactInfos.Add(ci);
-                }
+                context.Users.AddRange(users);
+                context.SaveChanges();
             }
-            context.SaveChanges();
-
-            // -------------------- Users -------------------- //
-            var users = new List<User>
-            {
-                new User
-                {
-                    Id = 1,
-                    Username = "admin",
-                    PasswordHash = "AQAAAAIAAYagAAAAEFqtbOPE2idxUpyojdztJmdIuFZRmhofTP5g8NIu/q+hqF8FXWYZ+3s9iagNW9jKKg==", // admin123
-                    Role = "Admin",
-                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                },
-                new User
-                {
-                    Id = 2,
-                    Username = "user",
-                    PasswordHash = "AQAAAAIAAYagAAAAEN2hsSrePGAnhJwh204VG2GpErdFNpQJDVCivC4h2qy7uJcB1Uu8ardHMMPk5WlHQg==", // user123
-                    Role = "User",
-                    CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
-                }
-            };
-
-            foreach (var user in users)
-            {
-                if (!context.Users.Any(u => u.Username == user.Username))
-                {
-                    context.Users.Add(user);
-                }
-            }
-            context.SaveChanges();
         }
     }
 }

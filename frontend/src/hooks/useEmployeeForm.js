@@ -1,12 +1,13 @@
 import { useState } from "react";
-
+// Custom hook to manage employee form state and validation
 export const useEmployeeForm = () => {
   const [employee, setEmployee] = useState(null); // tablo verisi
   const [draftEmployee, setDraftEmployee] = useState(null); // modalda düzenlenen geçici veri
   const [isNew, setIsNew] = useState(false);
   const [emailErrors, setEmailErrors] = useState([]);
   const [phoneErrors, setPhoneErrors] = useState([]);
-
+  
+// email and phone validation regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const phoneRegex = /^\+?[0-9]{7,15}$/;
 

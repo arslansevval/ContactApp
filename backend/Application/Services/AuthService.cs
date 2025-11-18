@@ -35,7 +35,7 @@ public class AuthService
             Username = user.Username,
             Role = user.Role,
             Token = token,
-            Expiration = DateTime.UtcNow.AddMinutes(5) // Token süresi 5 dakika  
+            Expiration = DateTime.UtcNow.AddMinutes(10) // Token süresi 10 dakika  
         };
     }
 }

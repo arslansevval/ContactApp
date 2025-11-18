@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+// Custom hook to manage company form state and validation
 export const useCompanyForm = () => {
   const [form, setForm] = useState({
     name: "",
@@ -13,7 +13,7 @@ export const useCompanyForm = () => {
     phone: false,
     email: false,
   });
-
+// email and phone validation regex
   const phoneRegex = /^\+?[0-9]{7,15}$/;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

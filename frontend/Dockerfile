@@ -21,8 +21,9 @@ FROM nginx:alpine
 # Build output’u nginx html dizinine kopyala
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Default nginx.conf kullanılabilir, port expose et
+# Kendi nginx config'imizi default config'in üzerine yazıyoruz
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
 
-# Nginx foreground’da çalışsın
 CMD ["nginx", "-g", "daemon off;"]

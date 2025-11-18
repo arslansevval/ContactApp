@@ -8,6 +8,7 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
+        // ENTITY ↔ DTO Mappings
         CreateMap<EmployeeCreateDto, Employee>();
         CreateMap<Employee, EmployeeReadDto>();
 

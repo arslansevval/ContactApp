@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using ContactApp.Application.Services;
 using ContactApp.Application.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class EmployeeController : ControllerBase
 {

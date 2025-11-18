@@ -3,8 +3,10 @@ using AutoMapper;
 using ContactApp.Core.Entities;
 using ContactApp.Core.Interfaces;
 using ContactApp.Application.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class CompanyController : ControllerBase
 {
@@ -19,6 +21,7 @@ public class CompanyController : ControllerBase
 
     // GET: api/company
     [HttpGet("GetAll")]
+    [Authorize]
     public async Task<IActionResult> GetAll()
     {
         var companies = await _unitOfWork.Companies.GetAllAsync();

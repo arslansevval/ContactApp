@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  contactapp-db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: ContactAppDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  contactapp-api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - "contactapp-db"
+    ports:
+      - "5001:8080"  # HTTP
+    entrypoint: ["dotnet", "ContactApp.dll"]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"  # host 5173 → container 80i
+
+volumes:
+  db-data:

@@ -118,8 +118,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
-
 // CORS must come before Authentication & Authorization
 app.UseCors("AllowReactApp");
 

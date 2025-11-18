@@ -6,7 +6,7 @@ const Home = () => {
         <p className="home-subtitle">Here’s your dashboard overview</p>
 
         <div className="home-grid">
-          <div className="home-box">Employees</div>
+          <div className="home-box" >Employees</div>
           <div className="home-box">Companies</div>
           <div className="home-box">Reports</div>
           <div className="home-box">Settings</div>

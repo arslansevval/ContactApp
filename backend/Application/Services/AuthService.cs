@@ -15,17 +15,17 @@ public class AuthService
         _hasher = new PasswordHasher<string>();
     }
 
-    public async Task<LoginResponseDto> Login(string username, string password)
+    public async Task<LoginResponseDto?> Login(string username, string password)
     {
         var user = await _userRepository.GetByUsernameAsync(username);
 
         if (user == null)
-            throw new UnauthorizedAccessException("Kullanıcı bulunamadı.");
+            return null; // kullanıcı bulunamadı
 
         var result = _hasher.VerifyHashedPassword(user.Username, user.PasswordHash, password);
 
         if (result == PasswordVerificationResult.Failed)
-            throw new UnauthorizedAccessException("Geçersiz şifre.");
+            return null; // şifre yanlış
 
         var token = _tokenService.GenerateToken(user.Username, user.Role);
 
@@ -35,7 +35,7 @@ public class AuthService
             Username = user.Username,
             Role = user.Role,
             Token = token,
-            Expiration = DateTime.UtcNow.AddHours(1)
+            Expiration = DateTime.UtcNow.AddMinutes(5) // Token süresi 5 dakika  
         };
     }
 }

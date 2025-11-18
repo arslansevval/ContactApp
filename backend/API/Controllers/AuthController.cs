@@ -17,9 +17,34 @@ namespace ContactApp.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
-            var response = await _authService.Login(dto.Username, dto.Password);
+            var user = await _authService.Login(dto.Username, dto.Password);
 
-            return Ok(response);
+            if (user == null)
+            {
+                // Başarısız login
+                return Unauthorized(new 
+                {
+                    IsOk = false,
+                    Message = "Invalid username or password"
+                });
+            }
+
+            // Başarılı login
+            var response = new LoginResponseDto
+            {
+                UserId = user.UserId,
+                Username = user.Username,
+                Role = user.Role,
+                Token = user.Token,
+                Expiration = user.Expiration
+            };
+
+            return Ok(new 
+            {
+                IsOk = true,
+                Message = "Login successful",
+                Data = response
+            });
         }
     }
 }

@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import api from "../api/axiosInstance";
 
 export const AuthContext = createContext();
 
@@ -7,73 +8,86 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem("user");
     if (!stored) return null;
-
     try {
       return JSON.parse(stored);
     } catch (err) {
-      console.error("Invalid JSON stored in localStorage for 'user'. Clearing corrupted value.", err);
-      localStorage.removeItem("user"); // bozuk veriyi temizle
+      console.error("Invalid JSON in localStorage for 'user'. Clearing.", err);
+      localStorage.removeItem("user");
       return null;
     }
   });
 
-
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [loading, setLoading] = useState(false);
-
-  const validateToken = (jwtToken) => {
-    try {
-      const decoded = jwtDecode(jwtToken);
-      const now = Date.now() / 1000;
-
-      if (decoded.exp && decoded.exp < now) {
-        logout();
-        return false;
-      }
-      return true;
-    } catch {
-      logout();
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    if (token) {
-      const isValid = validateToken(token);
-      if (!isValid) {
-        console.warn("Token expired — auto logout.");
-      }
-    }
-  }, []);
-
-  const login = async (email, password, loginFunc) => {
-    setLoading(true);
-    try {
-      const { token: newToken, user: loggedUser } = await loginFunc(email, password);
-
-      if (!validateToken(newToken)) {
-        return { success: false, message: "Token süresi geçmiş veya geçersiz." };
-      }
-
-      setToken(newToken);
-      setUser(loggedUser);
-
-      localStorage.setItem("token", newToken);
-      localStorage.setItem("user", JSON.stringify(loggedUser));
-
-      setLoading(false);
-      return { success: true };
-    } catch (err) {
-      setLoading(false);
-      return { success: false, message: err.message };
-    }
-  };
+  const [error, setError] = useState(null);
 
   const logout = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+  };
+
+  const validateToken = (jwtToken) => {
+    try {
+      const decoded = jwtDecode(jwtToken);
+      const now = Math.floor(Date.now() / 1000);
+      if (decoded.exp && decoded.exp < now) {
+        logout();
+        setError("Session expired, please log in again.");
+        return false;
+      }
+      return true;
+    } catch {
+      logout();
+      setError("Invalid token, please log in again.");
+      return false;
+    }
+  };
+
+  // Token süresini 60 saniyede bir kontrol et
+  useEffect(() => {
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      validateToken(token);
+    }, 1000 * 60);
+
+    return () => clearInterval(interval);
+  }, [token]);
+
+  const login = async (email, password) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const username = email;
+      const response = await api.post("/auth/login", { username, password });
+
+      const data = response.data.data;
+
+      const loggedUser = {
+        id: data.userId,
+        username: data.username,
+        role: data.role,
+        expiration: data.expiration
+      };
+
+      const newToken = data.token;
+
+      setToken(newToken);
+      setUser(loggedUser);
+      localStorage.setItem("token", newToken);
+      localStorage.setItem("user", JSON.stringify(loggedUser));
+
+      setLoading(false);
+      return { success: true };
+    } catch (err) {
+      const message = err.response?.data?.message || "Login failed";
+      setError(message);
+      setLoading(false);
+      return { success: false };
+    }
   };
 
   return (
@@ -84,6 +98,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         loading,
+        error,
         isAuthenticated: !!token,
       }}
     >

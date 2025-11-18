@@ -19,20 +19,18 @@ import { useLoginApi } from "../hooks/useLogin";
 const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
-  const { login, loading } = useAuth();
+  const { login, loading, error } = useAuth(); // 🔹 error state'i aldık
   const { loginFunc } = useLoginApi();
 
   const onSubmit = async (data) => {
-    setErrorMsg("");
     const result = await login(data.email, data.password, loginFunc);
+    console.log("Login result:", result);
     if (result.success) {
       navigate("/home");
-    } else {
-      setErrorMsg(result.message || "Login failed");
     }
+    // 🔹 error state zaten AuthContext tarafından güncelleniyor, ek bir setState gerek yok
   };
 
   return (
@@ -45,7 +43,8 @@ const Login = () => {
           Sign in to continue to your dashboard
         </Typography>
 
-        {errorMsg && <Alert severity="error" className="login-error">{errorMsg}</Alert>}
+        {/* 🔹 Backend veya AuthContext tarafından gelen hata mesajı */}
+        {error && <Alert severity="error" className="login-error">{error}</Alert>}
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <TextField
@@ -55,7 +54,6 @@ const Login = () => {
             {...register("email", { required: "Email is required" })}
             error={!!errors.email}
             helperText={errors.email?.message}
-            className="mui-input"
             InputLabelProps={{ className: "input-label" }}
             InputProps={{
               startAdornment: (
@@ -74,7 +72,6 @@ const Login = () => {
             {...register("password", { required: "Password is required" })}
             error={!!errors.password}
             helperText={errors.password?.message}
-            className="mui-input"
             InputLabelProps={{ className: "input-label" }}
             InputProps={{
               startAdornment: (

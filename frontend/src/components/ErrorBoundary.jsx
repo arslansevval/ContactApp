@@ -16,6 +16,7 @@ export default class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      console.error(this.state.error);
       return <h2>Something went wrong: {this.state.error.message}</h2>;
     }
     return this.props.children;

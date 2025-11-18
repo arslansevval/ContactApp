@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
-import { Box, Paper, Typography, Button, IconButton } from "@mui/material";
+import { Box, Paper, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { Edit, Delete, Save, Add, Close } from "@mui/icons-material";
 import { getCompanies, createCompany, updateCompany, deleteCompany } from "../api/companyApi";
 import { useModal } from "../hooks/useModal";
 import { useCompanyForm } from "../hooks/useCompanyForm";
+import DeleteModal from "../components/DeleteModal";
 
 const Companies = () => {
   const [rows, setRows] = useState([]);
@@ -12,9 +13,11 @@ const Companies = () => {
   const [isNewRow, setIsNewRow] = useState(false);
 
   const { isOpen, openModal, closeModal } = useModal();
-  const { form, setField, setForm, resetForm } = useCompanyForm();
+  const { form, setField, setForm, resetForm, errors, isFormValid } = useCompanyForm();
 
   const isMounted = useRef(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
     if (isMounted.current) return;
@@ -32,52 +35,35 @@ const Companies = () => {
   };
 
   // -------------------
-  // ADD NEW COMPANY
+  // ADD / EDIT
   // -------------------
   const handleAddCompany = () => {
-    const tempId = Date.now();
-    const newRow = { id: tempId, ...form };
-    setRows(prev => [...prev, newRow]);
-    setEditingRowId(tempId);
+    resetForm();
+    setEditingRowId(null);
     setIsNewRow(true);
-    openModal(); // Modal aç
+    openModal();
   };
 
-  // -------------------
-  // SAVE
-  // -------------------
+  const handleEditCompany = (row) => {
+    setForm({ ...row });
+    setEditingRowId(row.id);
+    setIsNewRow(false);
+    openModal();
+  };
+
   const handleSave = async () => {
-    const row = rows.find(r => r.id === editingRowId);
-    if (!row) return;
+    if (!isFormValid()) return;
 
     try {
       if (isNewRow) {
-        await createCompany(row);
+        await createCompany(form);
       } else {
-        await updateCompany(row.id, row);
+        await updateCompany(editingRowId, form);
       }
-      loadCompanies();
+      await loadCompanies();
+      handleCancel(); // modal ve form reset
     } catch (err) {
       console.error("Failed to save company:", err);
-    }
-
-    setEditingRowId(null);
-    setIsNewRow(false);
-    resetForm();
-    closeModal();
-  };
-
-  // -------------------
-  // DELETE
-  // -------------------
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this company?")) return;
-
-    try {
-      await deleteCompany(id);
-      loadCompanies();
-    } catch (err) {
-      console.error("Failed to delete company:", err);
     }
   };
 
@@ -85,80 +71,120 @@ const Companies = () => {
   // CANCEL
   // -------------------
   const handleCancel = () => {
-    if (isNewRow) {
-      setRows(prev => prev.filter(r => r.id !== editingRowId));
-    }
+    resetForm();
     setEditingRowId(null);
     setIsNewRow(false);
-    resetForm();
     closeModal();
   };
 
   // -------------------
-  // INLINE EDIT
+  // DELETE
   // -------------------
-  const handleRowChange = (id, field, value) => {
-    setRows(prev =>
-      prev.map(r => (r.id === id ? { ...r, [field]: value } : r))
-    );
+  const handleDeleteClick = (id) => {
+    setDeleteId(id);
+    setDeleteOpen(true);
   };
 
-  const editableCell = (params, field) =>
-    editingRowId === params.row.id ? (
-      <input
-        className="grid-input"
-        value={params.row[field] || ""}
-        onChange={(e) => handleRowChange(params.row.id, field, e.target.value)}
-      />
-    ) : (
-      <span>{params.row[field]}</span>
-    );
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteCompany(deleteId);
+      setRows(rows.filter(r => r.id !== deleteId));
+    } catch (err) {
+      console.error("Failed to delete company:", err);
+    } finally {
+      setDeleteId(null);
+      setDeleteOpen(false);
+    }
+  };
 
-  const columns = [
-    { field: "name", headerName: "Name", flex: 1, renderCell: (p) => editableCell(p, "name") },
-    { field: "address", headerName: "Address", flex: 1, renderCell: (p) => editableCell(p, "address") },
-    { field: "phone", headerName: "Phone", flex: 1, renderCell: (p) => editableCell(p, "phone") },
-    { field: "email", headerName: "Email", flex: 1, renderCell: (p) => editableCell(p, "email") },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 200,
-      renderCell: (params) =>
-        editingRowId === params.row.id ? (
-          <>
-            <IconButton color="primary" onClick={handleSave}><Save /></IconButton>
-            <IconButton color="error" onClick={handleCancel}><Close /></IconButton>
-          </>
-        ) : (
-          <>
-            <IconButton color="primary" onClick={() => { setEditingRowId(params.row.id); openModal(); }}><Edit /></IconButton>
-            <IconButton color="error" onClick={() => handleDelete(params.row.id)}><Delete /></IconButton>
-          </>
-        ),
-    },
-  ];
+  const handleCancelDelete = () => {
+    setDeleteId(null);
+    setDeleteOpen(false);
+  };
 
   return (
     <Box className="page-container">
       <Paper className="table-card">
         <Box className="table-header">
           <Typography variant="h5">Companies</Typography>
-          <Button variant="contained" color="primary" startIcon={<Add />} onClick={handleAddCompany}>
-            Add Company
-          </Button>
+          <Button variant="contained" color="primary" startIcon={<Add />} onClick={handleAddCompany}>Add Company</Button>
         </Box>
-
         <div className="data-grid-wrapper">
           <DataGrid
             rows={rows}
-            columns={columns}
-            initialState={{ pagination: { paginationModel: { pageSize: 5, page: 0 } } }}
+            columns={[
+              { field: "name", headerName: "Name", flex: 1 },
+              { field: "address", headerName: "Address", flex: 1 },
+              { field: "phone", headerName: "Phone", flex: 1 },
+              { field: "email", headerName: "Email", flex: 1 },
+              {
+                field: "actions",
+                headerName: "Actions",
+                width: 150,
+                renderCell: (params) => (
+                  <>
+                    <IconButton color="primary" onClick={() => handleEditCompany(params.row)}><Edit /></IconButton>
+                    <IconButton color="error" onClick={() => handleDeleteClick(params.row.id)}><Delete /></IconButton>
+                  </>
+                )
+              }
+            ]}
             pageSizeOptions={[5, 10]}
             pagination
             disableRowSelectionOnClick
           />
         </div>
       </Paper>
+
+      {/* ------------------- MODAL ------------------- */}
+      <Dialog open={isOpen} onClose={handleCancel} maxWidth="sm" fullWidth>
+        <DialogTitle>{isNewRow ? "Add Company" : "Edit Company"}</DialogTitle>
+        <DialogContent>
+          <Box display="flex" flexDirection="column" gap={2} mt={1}>
+            <TextField
+              label="Name"
+              value={form.name}
+              onChange={(e) => setField("name", e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Address"
+              value={form.address}
+              onChange={(e) => setField("address", e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Phone"
+              value={form.phone}
+              onChange={(e) => setField("phone", e.target.value)}
+              error={errors.phone}
+              helperText={errors.phone ? "Invalid phone format" : ""}
+              fullWidth
+            />
+            <TextField
+              label="Email"
+              value={form.email}
+              onChange={(e) => setField("email", e.target.value)}
+              error={errors.email}
+              helperText={errors.email ? "Invalid email format" : ""}
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancel}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={!isFormValid()}>Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ------------------- DELETE MODAL ------------------- */}
+      <DeleteModal
+        open={deleteOpen}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        message="Are you sure you want to delete this company?"
+      />
     </Box>
   );
 };

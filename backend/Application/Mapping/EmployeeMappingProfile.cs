@@ -9,17 +9,19 @@ public class EmployeeMappingProfile : Profile
         // ENTITY → DTO
         CreateMap<Employee, EmployeeWithContactInfoDto>()
             .ForMember(dest => dest.CompanyName,
-                       opt => opt.MapFrom(src => src.Company.Name))
+                       opt => opt.MapFrom(src => src.Company != null ? src.Company.Name : null))
+            // .ForMember(dest => dest.ContactInfos,
+            //            opt => opt.MapFrom(src => src.ContactInfos)) // ContactInfos map
             .ForMember(dest => dest.CreatedAt,
-                       opt => opt.MapFrom(src => src.CreatedAt)) // 🔥 Zorunlu
-            .ForMember(dest => dest.ContactInfos,
-                       opt => opt.MapFrom(src => src.ContactInfos));
+                       opt => opt.MapFrom(src => src.CreatedAt));
 
-        // DTO → ENTITY (update ve create için)
+        CreateMap<ContactInfo, ContactInfoReadDto>();
+
+        // DTO → ENTITY (create / update)
         CreateMap<EmployeeWithContactInfoDto, Employee>()
-            .ForMember(dest => dest.Company, opt => opt.Ignore()) // company navigation EF tarafından doldurulur
-            .ForMember(dest => dest.ContactInfos, opt => opt.Ignore()) // contactler manuel handle edilir
-            .ForMember(dest => dest.CreatedAt,
-                       opt => opt.Ignore()); // 🔥 Create sırasında EF verecek, update'te dokunma
+            .ForMember(dest => dest.Company, opt => opt.Ignore()) // navigation property ignore
+            // .ForMember(dest => dest.ContactInfos, opt => opt.Ignore()) // child entities manuel ekleniyor
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore()); // EF Core set ediyor
+            
     }
 }

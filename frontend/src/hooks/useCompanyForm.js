@@ -9,10 +9,23 @@ export const useCompanyForm = () => {
     sector: "",
   });
 
-  const setField = (field, value) =>
+  const [errors, setErrors] = useState({
+    phone: false,
+    email: false,
+  });
+
+  const phoneRegex = /^\+?[0-9]{7,15}$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const setField = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
 
-  const resetForm = () =>
+    // Validation
+    if (field === "phone") setErrors(prev => ({ ...prev, phone: value && !phoneRegex.test(value) }));
+    if (field === "email") setErrors(prev => ({ ...prev, email: value && !emailRegex.test(value) }));
+  };
+
+  const resetForm = () => {
     setForm({
       name: "",
       address: "",
@@ -20,11 +33,24 @@ export const useCompanyForm = () => {
       email: "",
       sector: "",
     });
+    setErrors({ phone: false, email: false });
+  };
+
+  const isFormValid = () => {
+    return (
+      form.name.trim() &&
+      form.address.trim() &&
+      !errors.phone &&
+      !errors.email
+    );
+  };
 
   return {
     form,
     setField,
     setForm,
     resetForm,
+    errors,
+    isFormValid
   };
 };

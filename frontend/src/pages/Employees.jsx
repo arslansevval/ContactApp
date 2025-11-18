@@ -6,17 +6,31 @@ import { useModal } from "../hooks/useModal";
 import { useEmployeeForm } from "../hooks/useEmployeeForm";
 import { getEmployeesWithContactInfo, createEmployee, updateEmployee, deleteEmployee } from "../api/employeeApi";
 import { getCompanies } from "../api/companyApi";
+import DeleteModal from "../components/DeleteModal";
 
 const Employees = () => {
   const [rows, setRows] = useState([]);
   const [companies, setCompanies] = useState([]);
   const { isOpen, openModal, closeModal } = useModal();
-  const { employee, setEmployee, resetEmployee } = useEmployeeForm();
+  const { 
+    initForm, 
+    resetEmployee, 
+    emailErrors, 
+    phoneErrors, 
+    isFormValid 
+  } = useEmployeeForm();
 
-  const isMounted = useRef(false); // Strict Mode için
+  const [draftEmployee, setDraftEmployee] = useState(null);
+  const isMounted = useRef(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
+  // Regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^\+?[0-9]{7,15}$/;
 
   useEffect(() => {
-    if (isMounted.current) return; // ikinci mount'u engelle
+    if (isMounted.current) return;
     isMounted.current = true;
 
     const fetchData = async () => {
@@ -54,131 +68,143 @@ const Employees = () => {
       emails: [{ email: "", isPrimary: true }],
       phones: [{ number: "", isPrimary: true }],
     };
-    setEmployee(newEmployee);
+    setDraftEmployee(newEmployee);
     openModal();
   };
 
-  const handleCreateEmployee = async () => {
-    try {
-      const contactInfos = [
-        ...employee.emails.map(e => ({ id: 0, employeeId: 0, type: "Email", value: e.email, isPrimary: e.isPrimary })),
-        ...employee.phones.map(p => ({ id: 0, employeeId: 0, type: "Phone", value: p.number, isPrimary: p.isPrimary }))
-      ];
-
-      const payload = {
-        id: 0,
-        firstName: employee.firstname,
-        lastName: employee.lastname,
-        position: employee.position,
-        companyId: employee.companyId,
-        companyName: employee.company,
-        contactInfos
-      };
-
-      const res = await createEmployee(payload);   // ✔ backend sonucu
-
-      // backend’den gelen doğru employee (createdAt dahil)
-      const newEmployee = {
-        id: res.data.id,
-        firstname: res.data.firstName,
-        lastname: res.data.lastName,
-        position: res.data.position,
-        companyId: res.data.companyId,
-        company: res.data.companyName,
-        createdAt: formatDate(res.data.createdAt),   // ✔ artık doğru tarih
-        emails: res.data.contactInfos
-          .filter(c => c.type === "Email")
-          .map(c => ({ id: c.id, email: c.value, isPrimary: c.isPrimary })),
-        phones: res.data.contactInfos
-          .filter(c => c.type === "Phone")
-          .map(c => ({ id: c.id, number: c.value, isPrimary: c.isPrimary }))
-      };
-
-      setRows([...rows, newEmployee]); // ✔ doğru veriyi ekledik
-
-      resetEmployee();
-      closeModal();
-    } catch (err) {
-      console.error("Failed to create employee:", err);
-    }
-  };
-
-
   const handleEdit = (emp) => {
-    setEmployee({ ...emp });
+    setDraftEmployee(JSON.parse(JSON.stringify(emp))); // deep copy
     openModal();
   };
 
   const handleSave = async () => {
+    if (!isFormValidDraft()) return;
+
     try {
       const contactInfos = [
-        ...employee.emails.map(e => ({ id: e.id, employeeId: employee.id, type: "Email", value: e.email, isPrimary: e.isPrimary })),
-        ...employee.phones.map(p => ({ id: p.id, employeeId: employee.id, type: "Phone", value: p.number, isPrimary: p.isPrimary }))
+        ...draftEmployee.emails.map(e => ({ id: e.id, employeeId: draftEmployee.id, type: "Email", value: e.email, isPrimary: e.isPrimary })),
+        ...draftEmployee.phones.map(p => ({ id: p.id, employeeId: draftEmployee.id, type: "Phone", value: p.number, isPrimary: p.isPrimary }))
       ];
+
       const payload = {
-        id: employee.id,
-        firstName: employee.firstname,
-        lastName: employee.lastname,
-        position: employee.position,
-        companyId: employee.companyId,
-        companyName: employee.company,
+        id: draftEmployee.id,
+        firstName: draftEmployee.firstname,
+        lastName: draftEmployee.lastname,
+        position: draftEmployee.position,
+        companyId: draftEmployee.companyId,
+        companyName: draftEmployee.company,
         contactInfos
       };
-      await updateEmployee(employee.id, payload);
-      setRows(rows.map(r => (r.id === employee.id ? employee : r)));
+
+      if (draftEmployee.id === 0) {
+        const res = await createEmployee(payload);
+        const newEmployee = {
+          id: res.data.id,
+          firstname: res.data.firstName,
+          lastname: res.data.lastName,
+          position: res.data.position,
+          companyId: res.data.companyId,
+          company: res.data.companyName,
+          createdAt: formatDate(res.data.createdAt),
+          emails: res.data.contactInfos.filter(c => c.type === "Email").map(c => ({ id: c.id, email: c.value, isPrimary: c.isPrimary })),
+          phones: res.data.contactInfos.filter(c => c.type === "Phone").map(c => ({ id: c.id, number: c.value, isPrimary: c.isPrimary }))
+        };
+        setRows([...rows, newEmployee]);
+      } else {
+        await updateEmployee(draftEmployee.id, payload);
+        setRows(rows.map(r => r.id === draftEmployee.id ? draftEmployee : r));
+      }
+
+      setDraftEmployee(null);
       resetEmployee();
       closeModal();
     } catch (err) {
-      console.error("Failed to update employee:", err);
+      console.error("Failed to save employee:", err);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this employee?")) return;
+  const handleCancel = () => {
+    setDraftEmployee(null);
+    resetEmployee();
+    closeModal();
+  };
+
+  const handleDeleteClick = (id) => {
+    setDeleteId(id);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await deleteEmployee(id);
-      setRows(rows.filter(r => r.id !== id));
+      await deleteEmployee(deleteId);
+      setRows(rows.filter(r => r.id !== deleteId));
     } catch (err) {
       console.error("Failed to delete employee:", err);
+    } finally {
+      setDeleteId(null);
+      setDeleteOpen(false);
     }
   };
 
-  const handleEmailChange = (index, value) => {
-    const newEmails = [...employee.emails];
+  const handleCancelDelete = () => {
+    setDeleteId(null);
+    setDeleteOpen(false);
+  };
+
+  // Draft input handlers
+  const handleDraftEmailChange = (index, value) => {
+    const newEmails = [...draftEmployee.emails];
     newEmails[index].email = value;
-    setEmployee({ ...employee, emails: newEmails });
+    setDraftEmployee({...draftEmployee, emails: newEmails});
   };
 
-  const handlePhoneChange = (index, value) => {
-    const newPhones = [...employee.phones];
+  const handleDraftPhoneChange = (index, value) => {
+    const newPhones = [...draftEmployee.phones];
     newPhones[index].number = value;
-    setEmployee({ ...employee, phones: newPhones });
+    setDraftEmployee({...draftEmployee, phones: newPhones});
   };
 
-  const handlePrimaryEmail = (index) => {
-    setEmployee({ ...employee, emails: employee.emails.map((e, i) => ({ ...e, isPrimary: i === index })) });
+  const handleDraftPrimaryEmail = (index) => {
+    setDraftEmployee({...draftEmployee, emails: draftEmployee.emails.map((e,i) => ({...e, isPrimary: i===index}))});
   };
 
-  const handlePrimaryPhone = (index) => {
-    setEmployee({ ...employee, phones: employee.phones.map((p, i) => ({ ...p, isPrimary: i === index })) });
+  const handleDraftPrimaryPhone = (index) => {
+    setDraftEmployee({...draftEmployee, phones: draftEmployee.phones.map((p,i) => ({...p, isPrimary: i===index}))});
   };
 
-  const handleAddEmail = () => setEmployee({ ...employee, emails: [...employee.emails, { email: "", isPrimary: false }] });
-  const handleAddPhone = () => setEmployee({ ...employee, phones: [...employee.phones, { number: "", isPrimary: false }] });
-  const handleRemoveEmail = (index) => setEmployee({ ...employee, emails: employee.emails.filter((_, i) => i !== index) });
-  const handleRemovePhone = (index) => setEmployee({ ...employee, phones: employee.phones.filter((_, i) => i !== index) });
-
-  const formatDate = (isoDate) => {
-    const date = new Date(isoDate);
-    return date.toLocaleDateString("tr-TR");
+  const handleDraftAddEmail = () => {
+    setDraftEmployee({...draftEmployee, emails: [...draftEmployee.emails, {email:"", isPrimary:false}]});
   };
+
+  const handleDraftAddPhone = () => {
+    setDraftEmployee({...draftEmployee, phones: [...draftEmployee.phones, {number:"", isPrimary:false}]});
+  };
+
+  const handleDraftRemoveEmail = (index) => {
+    setDraftEmployee({...draftEmployee, emails: draftEmployee.emails.filter((_,i)=>i!==index)});
+  };
+
+  const handleDraftRemovePhone = (index) => {
+    setDraftEmployee({...draftEmployee, phones: draftEmployee.phones.filter((_,i)=>i!==index)});
+  };
+
+  // Validation
+  const isFormValidDraft = () => {
+    if (!draftEmployee) return false;
+    const invalidEmail = draftEmployee.emails.some(e => !e.email || !emailRegex.test(e.email));
+    const invalidPhone = draftEmployee.phones.some(p => !p.number || !phoneRegex.test(p.number));
+    return !invalidEmail && !invalidPhone && draftEmployee.firstname && draftEmployee.lastname && draftEmployee.position && draftEmployee.companyId;
+  };
+
+  const formatDate = (isoDate) => new Date(isoDate).toLocaleDateString("tr-TR");
 
   const columns = [
     { field: "id", headerName: "ID", width: 80 },
     { field: "firstname", headerName: "Firstname", flex: 1 },
     { field: "lastname", headerName: "Lastname", flex: 1 },
-    { field: "emails", headerName: "Primary Email", flex: 1, valueGetter: (params) => params.find(e => e.isPrimary)?.email || "" },
-    { field: "phones", headerName: "Primary Phone", flex: 1, valueGetter: (params) => params.find(p => p.isPrimary)?.number || "" },
+    { field: "emails", headerName: "Primary Email", flex: 1, valueGetter: (params) => params.find(e=>e.isPrimary)?.email||"" },
+    { field: "phones", headerName: "Primary Phone", flex: 1, valueGetter: (params) => params.find(p=>p.isPrimary)?.number||"" },
     { field: "position", headerName: "Position", flex: 1 },
     { field: "company", headerName: "Company", flex: 1 },
     { field: "createdAt", headerName: "Created At", flex: 1 },
@@ -188,8 +214,8 @@ const Employees = () => {
       width: 160,
       renderCell: (params) => (
         <>
-          <IconButton color="primary" onClick={() => handleEdit(params.row)}><Edit /></IconButton>
-          <IconButton color="error" onClick={() => handleDelete(params.row.id)}><Delete /></IconButton>
+          <IconButton color="primary" onClick={()=>handleEdit(params.row)}><Edit /></IconButton>
+          <IconButton color="error" onClick={()=>handleDeleteClick(params.row.id)}><Delete /></IconButton>
         </>
       )
     }
@@ -203,71 +229,84 @@ const Employees = () => {
           <Button variant="contained" color="primary" startIcon={<Add />} onClick={handleAddEmployee}>Add Employee</Button>
         </Box>
         <div className="data-grid-wrapper">
-          <DataGrid rows={rows} columns={columns} pageSizeOptions={[5, 10]} pagination disableRowSelectionOnClick />
+          <DataGrid rows={rows} columns={columns} pageSizeOptions={[5,10]} pagination disableRowSelectionOnClick />
         </div>
       </Paper>
 
-      {employee && (
-        <Dialog open={isOpen} onClose={() => { resetEmployee(); closeModal(); }} maxWidth="sm" fullWidth>
-          <DialogTitle>{employee.id ? "Edit Employee" : "Add Employee"}</DialogTitle>
+      {draftEmployee && (
+        <Dialog open={isOpen} onClose={handleCancel} maxWidth="sm" fullWidth>
+          <DialogTitle>{draftEmployee.id===0 ? "Add Employee" : "Edit Employee"}</DialogTitle>
           <DialogContent>
-            {/* Firstname & Lastname */}
             <Box display="flex" gap={2} mb={2} mt={2}>
-              <TextField label="Firstname" fullWidth value={employee.firstname} onChange={(e) => setEmployee({ ...employee, firstname: e.target.value })} />
-              <TextField label="Lastname" fullWidth value={employee.lastname} onChange={(e) => setEmployee({ ...employee, lastname: e.target.value })} />
+              <TextField label="Firstname" fullWidth value={draftEmployee.firstname} onChange={(e)=>setDraftEmployee({...draftEmployee, firstname:e.target.value})}/>
+              <TextField label="Lastname" fullWidth value={draftEmployee.lastname} onChange={(e)=>setDraftEmployee({...draftEmployee, lastname:e.target.value})}/>
             </Box>
-
-            {/* Position & Company */}
             <Box display="flex" gap={2} mb={2}>
-              <TextField label="Position" fullWidth value={employee.position} onChange={(e) => setEmployee({ ...employee, position: e.target.value })} />
+              <TextField label="Position" fullWidth value={draftEmployee.position} onChange={(e)=>setDraftEmployee({...draftEmployee, position:e.target.value})}/>
               <FormControl fullWidth>
                 <InputLabel>Company</InputLabel>
                 <Select
-                  value={employee.companyId || ""}
+                  value={draftEmployee.companyId || ""}
                   label="Company"
-                  onChange={(e) => {
-                    const selected = companies.find(c => c.id === e.target.value);
-                    setEmployee({ ...employee, companyId: selected.id, company: selected.name });
+                  onChange={(e)=>{
+                    const selected = companies.find(c=>c.id===e.target.value);
+                    setDraftEmployee({...draftEmployee, companyId:selected.id, company:selected.name});
                   }}
                 >
-                  {companies.map(c => (
-                    <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
-                  ))}
+                  {companies.map(c=><MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
                 </Select>
               </FormControl>
             </Box>
 
             <Typography mt={2}>Emails</Typography>
-            {employee.emails.map((email, idx) => (
+            {draftEmployee.emails.map((email, idx)=>(
               <Box key={idx} display="flex" alignItems="center" mb={1}>
-                <TextField label={`Email ${idx + 1}`} fullWidth value={email.email} onChange={(e) => handleEmailChange(idx, e.target.value)} />
-                <FormControlLabel control={<Checkbox checked={email.isPrimary} onChange={() => handlePrimaryEmail(idx)} />} label="Primary" sx={{ ml: 1 }} />
-                <IconButton onClick={() => handleRemoveEmail(idx)} color="error"><Remove /></IconButton>
+                <TextField
+                  label={`Email ${idx+1}`}
+                  fullWidth
+                  value={email.email}
+                  onChange={(e)=>handleDraftEmailChange(idx, e.target.value)}
+                  error={email && !emailRegex.test(email.email)}
+                  helperText={email && !emailRegex.test(email.email) ? "Invalid email" : ""}
+                />
+                <FormControlLabel control={<Checkbox checked={email.isPrimary} onChange={()=>handleDraftPrimaryEmail(idx)}/>} label="Primary" sx={{ml:1}}/>
+                <IconButton onClick={()=>handleDraftRemoveEmail(idx)} color="error"><Remove/></IconButton>
               </Box>
             ))}
-            <Button startIcon={<Add />} onClick={handleAddEmail}>Add Email</Button>
+            <Button startIcon={<Add />} onClick={handleDraftAddEmail}>Add Email</Button>
 
             <Typography mt={2}>Phones</Typography>
-            {employee.phones.map((phone, idx) => (
+            {draftEmployee.phones.map((phone, idx)=>(
               <Box key={idx} display="flex" alignItems="center" mb={1}>
-                <TextField label={`Phone ${idx + 1}`} fullWidth value={phone.number} onChange={(e) => handlePhoneChange(idx, e.target.value)} />
-                <FormControlLabel control={<Checkbox checked={phone.isPrimary} onChange={() => handlePrimaryPhone(idx)} />} label="Primary" sx={{ ml: 1 }} />
-                <IconButton onClick={() => handleRemovePhone(idx)} color="error"><Remove /></IconButton>
+                <TextField
+                  label={`Phone ${idx+1}`}
+                  fullWidth
+                  value={phone.number}
+                  onChange={(e)=>handleDraftPhoneChange(idx, e.target.value)}
+                  error={phone && !phoneRegex.test(phone.number)}
+                  helperText={phone && !phoneRegex.test(phone.number) ? "Invalid phone" : ""}
+                />
+                <FormControlLabel control={<Checkbox checked={phone.isPrimary} onChange={()=>handleDraftPrimaryPhone(idx)}/>} label="Primary" sx={{ml:1}}/>
+                <IconButton onClick={()=>handleDraftRemovePhone(idx)} color="error"><Remove/></IconButton>
               </Box>
             ))}
-            <Button startIcon={<Add />} onClick={handleAddPhone}>Add Phone</Button>
+            <Button startIcon={<Add />} onClick={handleDraftAddPhone}>Add Phone</Button>
+
           </DialogContent>
 
           <DialogActions>
-            <Button onClick={() => { resetEmployee(); closeModal(); }}>Cancel</Button>
-            {employee.id ? (
-              <Button variant="contained" onClick={handleSave}>Save</Button>
-            ) : (
-              <Button variant="contained" onClick={handleCreateEmployee}>Add</Button>
-            )}
+            <Button onClick={handleCancel}>Cancel</Button>
+            <Button variant="contained" onClick={handleSave} disabled={!isFormValidDraft()}>{draftEmployee.id===0 ? "Add" : "Save"}</Button>
           </DialogActions>
         </Dialog>
       )}
+
+      <DeleteModal
+        open={deleteOpen}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        message="Are you sure you want to delete this employee?"
+      />
     </Box>
   );
 };

@@ -79,7 +79,8 @@ public class EmployeeService
             LastName = e.LastName,
             Position = e.Position,
             CreatedAt = e.CreatedAt,
-            ContactInfos = e.ContactInfos.Select(c => new ContactInfoReadDto
+            ContactInfos = e.ContactInfos
+            .Select(c => new ContactInfoReadDto
             {
                 Id = c.Id,
                 Type = c.Type,
@@ -95,36 +96,23 @@ public class EmployeeService
     /// </summary>
     public async Task<EmployeeWithContactInfoDto> CreateEmployeeWithContactInfosAsync(EmployeeWithContactInfoDto dto)
     {
-        // 1) Employee ekle
+        // 1) Employee ekle (ContactInfos map edilmeden)
         var employee = _mapper.Map<Employee>(dto);
-        // Eğer Company bilgisi de DTO’da geliyorsa, yeni nesne oluştur
         employee.CompanyId = dto.CompanyId;
         employee.CreatedAt = DateTime.UtcNow;
+        //employee.ContactInfos = new List<ContactInfo>(); // boş liste
         await _unitOfWork.Employees.AddAsync(employee);
         await _unitOfWork.CompleteAsync(); // Employee ID'si için commit
 
-        // 2) ContactInfo ekle
-        foreach (var cDto in dto.ContactInfos)
-        {
-            var contact = _mapper.Map<ContactInfo>(cDto);
-            contact.EmployeeId = employee.Id; // FK mutlaka verilmeli
-            await _unitOfWork.ContactInfos.AddAsync(contact);
-        }
 
-        // 3) Transaction commit
-        await _unitOfWork.CompleteAsync();
-
-        // 4) Cache temizle
+        // 3) Cache temizle
         InvalidateCache(employee.Id);
+
+        // 4) DTO dön
         var resDto = _mapper.Map<EmployeeWithContactInfoDto>(employee);
-        resDto.CompanyName = dto.CompanyName;
         return resDto;
     }
 
-
-    /// <summary>
-    /// Employee + ContactInfos birlikte güncelleme
-        /// </summary>
     public async Task UpdateEmployeeWithContactInfosAsync(EmployeeWithContactInfoDto dto)
     {
         var employee = await _employeeContactInfoRepository.GetByIdWithContactInfosAsync(dto.Id);
@@ -137,27 +125,38 @@ public class EmployeeService
         employee.FirstName = dto.FirstName;
         employee.LastName = dto.LastName;
         employee.Position = dto.Position;
-
         _unitOfWork.Employees.Update(employee);
 
-        // Tüm ContactInfos'u sil
-        foreach(var c in employee.ContactInfos.ToList())
-            _unitOfWork.ContactInfos.Remove(c);
-
-        // Sonra DTO'dan gelenleri ekle
-        foreach(var cDto in dto.ContactInfos)
+        // ---------------------------
+        // 2) ContactInfos sıfırla ve yeniden ekle
+        if (employee.ContactInfos != null)
         {
-            var newContact = _mapper.Map<ContactInfo>(cDto);
-            newContact.EmployeeId = employee.Id;
-            await _unitOfWork.ContactInfos.AddAsync(newContact);
+            foreach (var c in employee.ContactInfos.ToList())
+                _unitOfWork.ContactInfos.Remove(c);
+        }
+
+        if (dto.ContactInfos != null && dto.ContactInfos.Any())
+        {
+            foreach (var cDto in dto.ContactInfos)
+            {
+                var newContact = new ContactInfo
+                {
+                    EmployeeId = employee.Id,
+                    Type = cDto.Type,
+                    Value = cDto.Value,
+                    IsPrimary = cDto.IsPrimary,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.ContactInfos.AddAsync(newContact);
+            }
         }
 
         // ---------------------------
         // 3) Commit + Cache temizle
-        // ---------------------------
         await _unitOfWork.CompleteAsync();
         InvalidateCache(employee.Id);
     }
+
 
 
 

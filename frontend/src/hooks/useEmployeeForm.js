@@ -1,19 +1,25 @@
 import { useState } from "react";
 
-export const useEmployeeForm = (initialValues = null) => {
-  const [employee, setEmployee] = useState(initialValues);
+export const useEmployeeForm = () => {
+  const [employee, setEmployee] = useState(null); // tablo verisi
+  const [draftEmployee, setDraftEmployee] = useState(null); // modalda düzenlenen geçici veri
   const [isNew, setIsNew] = useState(false);
+  const [emailErrors, setEmailErrors] = useState([]);
+  const [phoneErrors, setPhoneErrors] = useState([]);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^\+?[0-9]{7,15}$/;
 
   const initForm = (emp = null, newEmployee = false) => {
     if (emp) {
-      setEmployee({
+      setDraftEmployee({
         ...emp,
         emails: emp.emails ?? [],
         phones: emp.phones ?? [],
       });
       setIsNew(newEmployee);
     } else {
-      setEmployee({
+      setDraftEmployee({
         id: Date.now(),
         firstname: "",
         lastname: "",
@@ -25,71 +31,72 @@ export const useEmployeeForm = (initialValues = null) => {
       });
       setIsNew(true);
     }
+    setEmailErrors([]);
+    setPhoneErrors([]);
   };
 
   const resetEmployee = () => {
-    setEmployee(null);
+    setDraftEmployee(null);
     setIsNew(false);
-  };
-
-  const handleChange = (field, value) => {
-    setEmployee(prev => ({ ...prev, [field]: value }));
+    setEmailErrors([]);
+    setPhoneErrors([]);
   };
 
   const handleEmailChange = (index, value) => {
-    const newEmails = [...employee.emails];
+    const newEmails = [...draftEmployee.emails];
     newEmails[index].email = value;
-    setEmployee({ ...employee, emails: newEmails });
+    setDraftEmployee({ ...draftEmployee, emails: newEmails });
+
+    const errors = [...emailErrors];
+    errors[index] = value && !emailRegex.test(value);
+    setEmailErrors(errors);
   };
 
   const handlePhoneChange = (index, value) => {
-    const newPhones = [...employee.phones];
+    const newPhones = [...draftEmployee.phones];
     newPhones[index].number = value;
-    setEmployee({ ...employee, phones: newPhones });
+    setDraftEmployee({ ...draftEmployee, phones: newPhones });
+
+    const errors = [...phoneErrors];
+    errors[index] = value && !phoneRegex.test(value);
+    setPhoneErrors(errors);
   };
 
   const handlePrimaryEmail = (index) => {
-    const newEmails = employee.emails.map((e, i) => ({ ...e, isPrimary: i === index }));
-    setEmployee({ ...employee, emails: newEmails });
+    setDraftEmployee({ ...draftEmployee, emails: draftEmployee.emails.map((e, i) => ({ ...e, isPrimary: i === index })) });
   };
 
   const handlePrimaryPhone = (index) => {
-    const newPhones = employee.phones.map((p, i) => ({ ...p, isPrimary: i === index }));
-    setEmployee({ ...employee, phones: newPhones });
+    setDraftEmployee({ ...draftEmployee, phones: draftEmployee.phones.map((p, i) => ({ ...p, isPrimary: i === index })) });
   };
 
-  const handleAddEmail = () => {
-    setEmployee({
-      ...employee,
-      emails: [...employee.emails, { email: "", isPrimary: false }]
-    });
-  };
-
-  const handleAddPhone = () => {
-    setEmployee({
-      ...employee,
-      phones: [...employee.phones, { number: "", isPrimary: false }]
-    });
-  };
-
+  const handleAddEmail = () => setDraftEmployee({ ...draftEmployee, emails: [...draftEmployee.emails, { email: "", isPrimary: false }] });
+  const handleAddPhone = () => setDraftEmployee({ ...draftEmployee, phones: [...draftEmployee.phones, { number: "", isPrimary: false }] });
   const handleRemoveEmail = (index) => {
-    const newEmails = employee.emails.filter((_, i) => i !== index);
-    setEmployee({ ...employee, emails: newEmails });
+    setDraftEmployee({ ...draftEmployee, emails: draftEmployee.emails.filter((_, i) => i !== index) });
+    setEmailErrors(emailErrors.filter((_, i) => i !== index));
+  };
+  const handleRemovePhone = (index) => {
+    setDraftEmployee({ ...draftEmployee, phones: draftEmployee.phones.filter((_, i) => i !== index) });
+    setPhoneErrors(phoneErrors.filter((_, i) => i !== index));
   };
 
-  const handleRemovePhone = (index) => {
-    const newPhones = employee.phones.filter((_, i) => i !== index);
-    setEmployee({ ...employee, phones: newPhones });
+  const isFormValid = () => {
+    if (!draftEmployee) return false;
+    const hasInvalidEmail = draftEmployee.emails.some((e, i) => !e.email || emailErrors[i]);
+    const hasInvalidPhone = draftEmployee.phones.some((p, i) => !p.number || phoneErrors[i]);
+    return !hasInvalidEmail && !hasInvalidPhone && draftEmployee.firstname && draftEmployee.lastname && draftEmployee.position && draftEmployee.companyId;
   };
 
   return {
     employee,
     setEmployee,
+    draftEmployee,
+    setDraftEmployee,
     isNew,
     setIsNew,
     initForm,
     resetEmployee,
-    handleChange,
     handleEmailChange,
     handlePhoneChange,
     handlePrimaryEmail,
@@ -98,5 +105,8 @@ export const useEmployeeForm = (initialValues = null) => {
     handleAddPhone,
     handleRemoveEmail,
     handleRemovePhone,
+    emailErrors,
+    phoneErrors,
+    isFormValid
   };
 };

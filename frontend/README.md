@@ -1,16 +1,45 @@
-# React + Vite
+# ContactApp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📌 Proje Hakkında  
+ContactApp, şirket içi çalışan (Employee) ve iletişim bilgileri (ContactInfo) takibi için geliştirilmiş bir ASP.NET Core + PostgreSQL + React uygulamasıdır.  
+Backend tarafında Entity Framework Core kullanılarak veritabanı işlemleri, JWT ile kimlik doğrulama, FluentValidation ile input doğrulama yapılmaktadır. Frontend tarafında React, MUI (Material UI) ve Vite ile modern bir kullanıcı arayüzü sunmaktadır.
 
-Currently, two official plugins are available:
+## 🧱 Teknoloji Stack  
+- Backend  
+  - .NET 10 (Preview) / ASP.NET Core  
+  - Entity Framework Core  
+  - PostgreSQL  
+  - JWT ile kimlik doğrulama  
+  - FluentValidation  
+- Frontend  
+  - React  
+  - Vite  
+  - Material UI (MUI)  
+- Containerization  
+  - Docker  
+  - Docker Compose
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Başlarken
 
-## React Compiler
+### Gereksinimler  
+- Docker & Docker Compose  
+- .NET SDK (yerel geliştirme için)  
+- Node.js & npm/yarn (yerel frontend çalıştırma için)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Adım‑Adım Kurulum  
+1. Depoyu klonlayın:  
+   ```bash
+   git clone https://github.com/arslansevval/ContactApp.git
+   cd ContactApp
+   
+2.Ortam değişkenlerini (.env) veya appsettings.json içindeki veritabanı bağlantılarını kontrol edin. 
+Örnek:
+"ConnectionStrings": {
+  "DefaultConnection": "Host=contactapp-db;Port=5432;Database=ContactAppDb;Username=postgres;Password=1234"
+}
 
-## Expanding the ESLint configuration
+3.Docker Compose ile tüm servislere birden başlatın:
+docker compose up -d
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+4.Backend API endpoint'leri http://localhost:5001 portunda erişilebilir olacaktır (Docker Compose yapılandırmasına göre değişebilir).
+5.Frontend arayüzü http://localhost:5173 adresinde açın.

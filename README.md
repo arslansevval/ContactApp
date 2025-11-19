@@ -47,7 +47,7 @@ docker compose up -d
 
 5.Frontend arayüzü http://localhost:5173 adresinde açın.
 
-6. Kullanıcı giriş bilgileri
+6.Kullanıcı giriş bilgileri:
 ```bash
 email: admin
 password: admin123

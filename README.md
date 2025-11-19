@@ -45,3 +45,9 @@ docker compose up -d
 ```
 4.Backend API endpoint'leri http://localhost:5001 portunda erişilebilir olacaktır (Docker Compose yapılandırmasına göre değişebilir).
 5.Frontend arayüzü http://localhost:5173 adresinde açın.
+6. Kullanıcı giriş bilgileri
+email: admin
+password: admin123
+
+email: user
+password:user123

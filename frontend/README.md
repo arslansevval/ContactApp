@@ -37,11 +37,11 @@ Backend tarafında Entity Framework Core kullanılarak veritabanı işlemler
 ```bash
 "ConnectionStrings": {
   "DefaultConnection": "Host=contactapp-db;Port=5432;Database=ContactAppDb;Username=postgres;Password=1234"
-}
-
+} 
+```
 3.Docker Compose ile tüm servislere birden başlatın:
 ```bash
 docker compose up -d
-
+```
 4.Backend API endpoint'leri http://localhost:5001 portunda erişilebilir olacaktır (Docker Compose yapılandırmasına göre değişebilir).
 5.Frontend arayüzü http://localhost:5173 adresinde açın.

@@ -281,8 +281,8 @@ const Employees = () => {
                   fullWidth
                   value={email.email}
                   onChange={(e)=>handleDraftEmailChange(idx, e.target.value)}
-                  error={email && !emailRegex.test(email.email)}
-                  helperText={email && !emailRegex.test(email.email) ? "Invalid email" : ""}
+                  error={email.email && !emailRegex.test(email.email)} // boşsa error false
+                  helperText={email.email && !emailRegex.test(email.email) ? "Invalid email" : ""}
                 />
                 <FormControlLabel control={<Checkbox checked={email.isPrimary} onChange={()=>handleDraftPrimaryEmail(idx)}/>} label="Primary" sx={{ml:1}}/>
                 <IconButton onClick={()=>handleDraftRemoveEmail(idx)} color="error"><Remove/></IconButton>
@@ -298,8 +298,8 @@ const Employees = () => {
                   fullWidth
                   value={phone.number}
                   onChange={(e)=>handleDraftPhoneChange(idx, e.target.value)}
-                  error={phone && !phoneRegex.test(phone.number)}
-                  helperText={phone && !phoneRegex.test(phone.number) ? "Invalid phone" : ""}
+                  error={phone.number && !phoneRegex.test(phone.number)} // boşsa error false
+                  helperText={phone.number && !phoneRegex.test(phone.number) ? "Invalid phone" : ""}
                 />
                 <FormControlLabel control={<Checkbox checked={phone.isPrimary} onChange={()=>handleDraftPrimaryPhone(idx)}/>} label="Primary" sx={{ml:1}}/>
                 <IconButton onClick={()=>handleDraftRemovePhone(idx)} color="error"><Remove/></IconButton>

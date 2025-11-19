@@ -40,7 +40,7 @@ namespace ContactApp.Infrastructure.Data
                 {
                     Name = "Apple",
                     Address = "123 Main St",
-                    Phone = "555-1234",
+                    Phone = "5551234456",
                     Email = "info@apple.com",
                     CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
                 };
@@ -64,7 +64,7 @@ namespace ContactApp.Infrastructure.Data
                         new ContactInfo
                         {
                             Type = "Phone",
-                            Value = "555-0001",
+                            Value = "5550564789",
                             IsPrimary = true,
                             CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
                         }
@@ -76,7 +76,7 @@ namespace ContactApp.Infrastructure.Data
                 {
                     Name = "Beta LLC",
                     Address = "456 Oak Ave",
-                    Phone = "555-5678",
+                    Phone = "5555678345",
                     Email = "contact@beta.com",
                     CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
                 };
@@ -100,7 +100,7 @@ namespace ContactApp.Infrastructure.Data
                         new ContactInfo
                         {
                             Type = "Phone",
-                            Value = "555-0002",
+                            Value = "5559876543",
                             IsPrimary = true,
                             CreatedAt = new DateTime(2025, 11, 16, 0, 0, 0, DateTimeKind.Utc)
                         }

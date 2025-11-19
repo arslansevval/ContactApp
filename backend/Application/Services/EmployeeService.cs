@@ -96,7 +96,7 @@ public class EmployeeService
         var employee = _mapper.Map<Employee>(dto);
         employee.CompanyId = dto.CompanyId;
         employee.CreatedAt = DateTime.UtcNow;
-
+        
         await _unitOfWork.Employees.AddAsync(employee);
         await _unitOfWork.CompleteAsync(); // Employee ID'si için commit
 
@@ -106,6 +106,7 @@ public class EmployeeService
 
         // 4) DTO dön
         var resDto = _mapper.Map<EmployeeWithContactInfoDto>(employee);
+        resDto.CompanyName = dto.CompanyName;
         return resDto;
     }
 

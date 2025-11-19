@@ -36,10 +36,10 @@ const Login = () => {
     <Box className="login-page">
       <Paper className="login-card">
         <Typography variant="h4" className="login-title">
-          Welcome Back
+          Welcome!
         </Typography>
         <Typography className="login-subtitle">
-          Sign in to continue to your dashboard
+          Sign in to continue to your app
         </Typography>
 
         {/* 🔹 Backend veya AuthContext tarafından gelen hata mesajı */}
